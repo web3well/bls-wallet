@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --unstable --allow-read
+#!/usr/bin/env -S deno run --allow-net --unstable --allow-read --allow-env
 
 // Useful for when breaking database changes are made.
 

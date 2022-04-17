@@ -6,14 +6,14 @@ import { exec as execCb } from "child_process";
 import { writeFile } from "fs/promises";
 import { ethers } from "hardhat";
 import { NetworkConfig } from "../clients/src";
-import deployDeployer from "../shared/helpers/deployDeployer";
-import precompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
+// import deployDeployer from "../shared/helpers/deployDeployer";
+// import precompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import Fixture from "../shared/helpers/Fixture";
 
 dotenv.config();
 const exec = util.promisify(execCb);
 
-const netCfgFilePath = "./networks/local.json";
+const netCfgFilePath = "./networks/arbitrum-testnet.json";
 
 async function deployToken(): Promise<string> {
   const MockERC20 = await ethers.getContractFactory("MockERC20");
@@ -33,11 +33,11 @@ async function main() {
   console.log("starting bls-wallet contracts deployment");
   const genesisBlock = await ethers.provider.getBlockNumber();
 
-  console.log("deploying create2Deployer...");
-  const create2Deployer = await deployDeployer();
+  // console.log("deploying create2Deployer...");
+  // const create2Deployer = await deployDeployer();
 
-  console.log("deploying precompile cost estimator...");
-  const precompileCostEstimatorAddress = await precompileCostEstimator();
+  // console.log("deploying precompile cost estimator...");
+  // const precompileCostEstimatorAddress = await precompileCostEstimator();
 
   console.log("deploying bls-wallet contracts...");
   const fx = await Fixture.create();
@@ -50,8 +50,8 @@ async function main() {
   const netCfg: NetworkConfig = {
     parameters: {},
     addresses: {
-      create2Deployer: create2Deployer.address,
-      precompileCostEstimator: precompileCostEstimatorAddress,
+      create2Deployer: "0x0",
+      precompileCostEstimator: "0x4CaEB9E2DdedfF718dA3AF96a7248444dC18e3e2",
       blsLibrary: fx.blsLibrary.address,
       verificationGateway: fx.verificationGateway.address,
       blsExpander: fx.blsExpander.address,

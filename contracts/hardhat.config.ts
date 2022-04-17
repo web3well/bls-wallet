@@ -82,7 +82,9 @@ const config: HardhatUserConfig = {
     arbitrum_testnet: {
       // chainId: 421611
       url: process.env.ARBITRUM_TESTNET_URL,
-      accounts,
+      accounts: [
+        "0x0", // Redacted
+      ],
       gasPrice: 1408857682, // 287938372,
     },
     arbitrum: {

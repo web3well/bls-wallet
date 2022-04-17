@@ -57,39 +57,38 @@ export default class Fixture {
       signers.map((acc) => acc.getAddress()),
     )) as string[];
 
-    const create2Fixture = Create2Fixture.create();
+    // const create2Fixture = Create2Fixture.create();
 
     // deploy wallet implementation contract
-    const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
+    const blsWalletFactory = await ethers.getContractFactory("BLSWallet");
+    const blsWalletImpl = await (await blsWalletFactory.deploy()).deployed();
     try {
       await (
         await blsWalletImpl.initialize(ethers.constants.AddressZero)
       ).wait();
     } catch (e) {}
 
-    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
+    const blsFactory = await ethers.getContractFactory("BLSOpen");
+    const bls = await (await blsFactory.deploy()).deployed();
     // deploy Verification Gateway
-    const verificationGateway = (await create2Fixture.create2Contract(
-      "VerificationGateway",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address", "address"],
-        [bls.address, blsWalletImpl.address],
-      ),
-    )) as VerificationGateway;
+    const vgFactory = await ethers.getContractFactory("VerificationGateway");
+    const verificationGateway = await (
+      await vgFactory.deploy(bls.address, blsWalletImpl.address)
+    ).deployed();
+
+    const blsExpanderFactory = await ethers.getContractFactory("BLSExpander");
 
     // deploy BLSExpander Gateway
-    const blsExpander = await create2Fixture.create2Contract(
-      "BLSExpander",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address"],
-        [verificationGateway.address],
-      ),
+    const blsExpander = await (
+      await blsExpanderFactory.deploy(verificationGateway.address)
+    ).deployed();
+
+    const utilitiesFactory = await ethers.getContractFactory(
+      "AggregatorUtilities",
     );
 
     // deploy utilities
-    const utilities = await create2Fixture.create2Contract(
-      "AggregatorUtilities",
-    );
+    const utilities = await (await utilitiesFactory.deploy()).deployed();
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 

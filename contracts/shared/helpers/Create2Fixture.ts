@@ -11,10 +11,9 @@ export default class Create2Fixture {
 
   static create(): Create2Fixture {
     return new Create2Fixture(
-      ethers.Wallet.fromMnemonic(
-        `${process.env.DEPLOYER_MNEMONIC}`,
-        `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`,
-      ).connect(ethers.provider),
+      new ethers.Wallet(
+        "0x0", // Redacted
+      ),
     );
   }
 

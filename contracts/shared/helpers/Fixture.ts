@@ -47,7 +47,7 @@ export default class Fixture {
     public blsWalletSigner: BlsWalletSigner,
   ) {
     this.lazyBlsWallets = Range(blsWalletCount).map(
-      (i) => () => this.makeWallet(secretNumbers[i]),
+      (i) => () => this.createWallet(secretNumbers[i]),
     );
   }
 
@@ -202,14 +202,25 @@ export default class Fixture {
     ).wait();
   }
 
-  async makeWallet(secretNumber = Math.abs((Math.random() * 0xffffffff) << 0)) {
+  makeBlsPrivateKey(
+    secretNumber = Math.abs((Math.random() * 0xffffffff) << 0),
+  ) {
     assert(!isNaN(secretNumber), "secret ");
+    return `0x${secretNumber.toString(16)}`;
+  }
 
-    const wallet = await BlsWalletWrapper.connect(
-      `0x${secretNumber.toString(16)}`,
+  /** Connect wallet but don't submit an empty tx to make it exist on chain */
+  async connectWallet(secretNumber?: number) {
+    return await BlsWalletWrapper.connect(
+      this.makeBlsPrivateKey(secretNumber),
       this.verificationGateway.address,
       this.verificationGateway.provider,
     );
+  }
+
+  /** Connect wallet and submit an empty tx to make it exist on chain */
+  async createWallet(secretNumber?: number) {
+    const wallet = await this.connectWallet(secretNumber);
 
     // Perform an empty transaction to trigger wallet creation
     await (

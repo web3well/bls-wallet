@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./interfaces/IWallet.sol";
+import "hardhat/console.sol";
 
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
@@ -128,8 +129,10 @@ contract VerificationGateway
         uint256[2] calldata messageSenderSignature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
+        console.log("setExternalWallet");
         require(!registeredWalletAddresses[msg.sender], "mapping to this wallet already exists");
         safeSetWallet(messageSenderSignature, publicKey, msg.sender);
+        console.log("setExternalWallet finished");
     }
 
     /**
@@ -142,35 +145,7 @@ contract VerificationGateway
         bytes32 hash,
         bytes calldata encodedFunction
     ) public onlyWallet(hash) {
-        IWallet wallet = walletFromHash(hash);
 
-        // ensure first parameter is the calling wallet address
-        bytes memory encodedAddress = abi.encode(address(wallet));
-        uint8 selectorOffset = 4;
-        for (uint256 i=0; i<32; i++) {
-            require(
-                (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                "VG: first param to proxy admin is not calling wallet"
-            );
-        }
-
-        wallet.setAnyPending();
-
-        // ensure wallet has pre-approved encodedFunction
-        bytes32 approvedFunctionHash = wallet.approvedProxyAdminFunctionHash();
-        bytes32 encodedFunctionHash = keccak256(encodedFunction);
-        bool matchesApproved = encodedFunctionHash == approvedFunctionHash;
-
-        if (matchesApproved == false) {
-            // prepare for a future call
-            wallet.setProxyAdminFunctionHash(encodedFunctionHash);
-        }
-        else {
-            // call approved function
-            (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
-            require(success, "VG: call to proxy admin failed");
-            wallet.clearApprovedProxyAdminFunctionHash();
-        }
     }
 
     /**
@@ -257,6 +232,9 @@ contract VerificationGateway
                     bool success,
                     bytes[] memory resultSet
                 ) = wallet.performOperation(bundle.operations[i]);
+                console.log("performed operation");
+                console.log(address(wallet));
+                console.log(success);
                 successes[i] = success;
                 results[i] = resultSet;
                 emit WalletOperationProcessed(

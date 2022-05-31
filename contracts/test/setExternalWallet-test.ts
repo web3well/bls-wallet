@@ -1,14 +1,15 @@
 import { expect } from "chai";
 
 import { ethers, network } from "hardhat";
-import { ContractTransaction } from "ethers";
+import { BigNumberish, ContractTransaction } from "ethers";
 
 import Fixture from "../shared/helpers/Fixture";
 
 import { parseEther } from "ethers/lib/utils";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { BlsWalletWrapper, PublicKey } from "../clients/src";
+import { BlsWalletWrapper, PublicKey, Signature } from "../clients/src";
+import { MockERC20, VerificationGateway } from "../typechain";
 
 describe("setExternalWallet", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
@@ -42,25 +43,47 @@ describe("setExternalWallet", async function () {
     }
   });
 
-  it("should not allow setting existing public key", async () => {
+  it.only("should not allow setting existing public key", async () => {
     const wallet1 = await fx.createWallet();
-    const newPublicKey = (await fx.connectWallet()).PublicKey();
 
-    // Ordinary setting a new public key
-    await (await setExternalWallet(fx, wallet1, newPublicKey)).wait();
+    // This isn't actually going to be a separate wallet, we're just using it
+    // to sign things for wallet1
+    const wallet2 = await fx.connectWallet();
+    console.log("addresses", {
+      wallet1: wallet1.address,
+      wallet2: wallet2.address,
+    });
 
-    const wallet2 = await fx.createWallet();
+    const signedAddress = wallet2.signMessage(wallet1.address);
+    const newPublicKey = wallet2.PublicKey();
 
-    // Setting another wallet to the same public key should fail
-    await expect(
-      setExternalWallet(fx, wallet2, newPublicKey),
-    ).to.be.rejectedWith("mapping to this wallet already exists");
+    // This should fail, but because it's in a bundle it's tricky to extract
+    // Easier to just check whether the effect happened or not
+    await (
+      await setExternalWallet(fx, wallet1, signedAddress, newPublicKey)
+    ).wait();
+
+    const token = await createToken();
+
+    // If setExternalWallet above worked, then this tx should actually mint to
+    // wallet 1
+    console.log("before mint");
+    await (await mint(fx.verificationGateway, wallet2, token, 1)).wait();
+    console.log("after mint");
+
+    // We expect setExternalWallet should not have worked, so wallet1 balance
+    // should be 0
+    expect((await token.balanceOf(wallet1.address)).toNumber()).to.eq(0);
+
+    // Huh?
+    expect((await token.balanceOf(wallet2.address)).toNumber()).to.eq(1);
   });
 });
 
 async function setExternalWallet(
   fx: Fixture,
   wallet: BlsWalletWrapper,
+  signedAddress: Signature,
   newPublicKey: PublicKey,
 ): Promise<ContractTransaction> {
   return fx.verificationGateway.processBundle(
@@ -72,10 +95,41 @@ async function setExternalWallet(
           contractAddress: fx.verificationGateway.address,
           encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
             "setExternalWallet",
-            [wallet.signMessage(wallet.address), newPublicKey],
+            [signedAddress, newPublicKey],
           ),
         },
       ],
     }),
   );
+}
+
+async function mint(
+  vg: VerificationGateway,
+  wallet: BlsWalletWrapper,
+  token: MockERC20,
+  amount: BigNumberish,
+) {
+  return vg.processBundle(
+    wallet.sign({
+      nonce: await wallet.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: token.address,
+          encodedFunction: token.interface.encodeFunctionData("mint", [
+            wallet.address,
+            amount,
+          ]),
+        },
+      ],
+    }),
+  );
+}
+
+async function createToken() {
+  const MockERC20 = await ethers.getContractFactory("MockERC20");
+  const mockERC20 = await MockERC20.deploy("AnyToken", "TOK", 0);
+  await mockERC20.deployed();
+
+  return mockERC20;
 }

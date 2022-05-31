@@ -25,6 +25,8 @@ export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
   static readonly DEFAULT_BLS_ACCOUNTS_LENGTH = 5;
 
+  lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[];
+
   private constructor(
     public chainId: number,
     public provider: providers.Provider,
@@ -32,7 +34,8 @@ export default class Fixture {
     public signers: Signer[],
     public addresses: string[],
 
-    public lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[],
+    public blsWalletCount: number,
+    public secretNumbers: number[] | undefined,
 
     public verificationGateway: VerificationGateway,
 
@@ -42,7 +45,11 @@ export default class Fixture {
 
     public BLSWallet: ContractFactory,
     public blsWalletSigner: BlsWalletSigner,
-  ) {}
+  ) {
+    this.lazyBlsWallets = Range(blsWalletCount).map(
+      (i) => () => this.makeWallet(secretNumbers[i]),
+    );
+  }
 
   /// @dev Contracts deployed by first ethers signer
   static async create(
@@ -93,40 +100,13 @@ export default class Fixture {
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
-    const lazyBlsWallets = Range(blsWalletCount).map((i) => {
-      let secretNumber: number;
-
-      if (secretNumbers !== undefined) {
-        secretNumber = secretNumbers[i];
-        assert(!isNaN(secretNumber), "secret ");
-      } else {
-        secretNumber = Math.abs((Math.random() * 0xffffffff) << 0);
-      }
-
-      return async () => {
-        const wallet = await BlsWalletWrapper.connect(
-          `0x${secretNumber.toString(16)}`,
-          verificationGateway.address,
-          verificationGateway.provider,
-        );
-
-        // Perform an empty transaction to trigger wallet creation
-        await (
-          await verificationGateway.processBundle(
-            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
-          )
-        ).wait();
-
-        return wallet;
-      };
-    });
-
     return new Fixture(
       chainId,
       ethers.provider,
       signers,
       addresses,
-      lazyBlsWallets,
+      blsWalletCount,
+      secretNumbers,
       verificationGateway,
       bls,
       blsExpander,
@@ -220,5 +200,24 @@ export default class Fixture {
         }),
       )
     ).wait();
+  }
+
+  async makeWallet(secretNumber = Math.abs((Math.random() * 0xffffffff) << 0)) {
+    assert(!isNaN(secretNumber), "secret ");
+
+    const wallet = await BlsWalletWrapper.connect(
+      `0x${secretNumber.toString(16)}`,
+      this.verificationGateway.address,
+      this.verificationGateway.provider,
+    );
+
+    // Perform an empty transaction to trigger wallet creation
+    await (
+      await this.verificationGateway.processBundle(
+        wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
+      )
+    ).wait();
+
+    return wallet;
   }
 }

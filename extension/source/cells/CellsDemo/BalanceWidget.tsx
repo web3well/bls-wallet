@@ -14,12 +14,11 @@ const BalanceWidget: FunctionComponent = () => {
 
     const balanceDisplay = new FormulaCell(
       { address, _: quillCtx.blockNumber },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      async ({ address }) => {
+      async ({ $address }) => {
         const addressError = (() => {
           try {
             // Handles mixed case checksums
-            ethers.utils.getAddress(address);
+            ethers.utils.getAddress($address);
             return undefined;
           } catch (err) {
             const error = err as Error;
@@ -36,7 +35,7 @@ const BalanceWidget: FunctionComponent = () => {
           return `(${addressError.message})`;
         }
 
-        const balance = await quillCtx.ethersProvider.getBalance(address);
+        const balance = await quillCtx.ethersProvider.getBalance($address);
         return `ETH: ${(+ethers.utils.formatEther(balance)).toFixed(3)}`;
       },
     );

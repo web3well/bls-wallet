@@ -12,6 +12,7 @@ import MemoryCell from './MemoryCell';
 import AsyncIteratee from './AsyncIteratee';
 import Stoppable from './Stoppable';
 import nextEvent from './nextEvent';
+import prefixKeys, { PrefixKeys } from './prefixKeys';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -35,7 +36,9 @@ export class FormulaCell<
 
   constructor(
     public inputCells: InputCells,
-    public formula: (inputValues: InputValues<InputCells>) => T,
+    public formula: (
+      inputValues: PrefixKeys<'$', InputValues<InputCells>>,
+    ) => T,
     public hasChanged: (
       previous: Awaited<T> | undefined,
       latest: Awaited<T>,
@@ -127,7 +130,7 @@ export class FormulaCell<
 
       for await (const inputValues of stoppableSequence) {
         const latest = await this.formula(
-          inputValues as InputValues<InputCells>,
+          prefixKeys('$', inputValues as InputValues<InputCells>),
         );
 
         iterationCell.write({ value: latest });

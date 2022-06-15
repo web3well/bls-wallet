@@ -7,8 +7,7 @@ export default function approximate(
 ): IReadableCell<number> {
   return new FormulaCell<{ value: IReadableCell<number> }, number>(
     { value },
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    ({ value }) => value,
+    ({ $value }) => $value,
     (previous, latest) => {
       if (previous === undefined) {
         return true;

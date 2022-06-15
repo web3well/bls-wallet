@@ -27,14 +27,12 @@ export const CellsDemoPage: FunctionComponent = () => {
     const c = new MemoryCell(0);
     const includeSlow = new MemoryCell(true);
 
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    const ab = new FormulaCell({ a, b }, ({ a, b }) => a * b);
+    const ab = new FormulaCell({ a, b }, ({ $a, $b }) => $a * $b);
 
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    const abSlow = new FormulaCell({ a, b }, async ({ a, b }) => {
-      console.log(`calculating ${a}*${b}...`);
+    const abSlow = new FormulaCell({ a, b }, async ({ $a, $b }) => {
+      console.log(`calculating ${$a}*${$b}...`);
       await delay(500);
-      const res = a * b;
+      const res = $a * $b;
       console.log(`...${res}`);
       return res;
     });

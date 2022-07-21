@@ -15,6 +15,9 @@ import onAction from '../helpers/onAction';
 import { useQuill } from '../QuillContext';
 import useCell from '../cells/useCell';
 import Loading from '../components/Loading';
+import CurrencyDisplay from '../components/CurrencyDisplay';
+import ChainCurrency from '../components/ChainCurrency';
+import PreferredCurrency from '../components/PreferredCurrency';
 
 const Confirm: FunctionComponent = () => {
   const quill = useQuill();
@@ -115,15 +118,70 @@ const Confirm: FunctionComponent = () => {
               'p-4',
               'bg-grey-300',
               'rounded-md',
-              'flex',
-              'justify-between',
-              'h-20',
+              'grid',
+              'gap-3',
             ].join(' ')}
+            style={{
+              gridTemplateColumns: '1fr auto auto 0.75rem auto auto',
+              gridTemplateAreas: `
+                "a1 b1 c1 . d1 e1"
+                "a2 b2 c2 . d2 e2"
+                "a3 a3 a3 a3 a3 a3"
+                "a4 b4 c4 . d4 e4"
+              `,
+            }}
           >
-            <div className="">Total Transaction Fees</div>
-            <div className="text-right">
-              <div className="font-bold">USD $0.0</div>
-              <div className="">{calculateTotal(tx.actions)} ETH</div>
+            <div style={{ gridArea: 'a1' }}>Value</div>
+            <div style={{ gridArea: 'b1' }} className="font-bold text-right">
+              {calculateTotal(tx.actions)}
+            </div>
+            <div style={{ gridArea: 'c1' }}>
+              <ChainCurrency />
+            </div>
+            <div style={{ gridArea: 'd1' }} className="font-bold text-right">
+              <CurrencyDisplay
+                chainValue={Number(calculateTotal(tx.actions))}
+                includeLabel={false}
+              />
+            </div>
+            <div style={{ gridArea: 'e1' }}>
+              <PreferredCurrency />
+            </div>
+
+            <div style={{ gridArea: 'a2' }}>Fee</div>
+            <div style={{ gridArea: 'b2' }} className="font-bold text-right">
+              0
+            </div>
+            <div style={{ gridArea: 'c2' }}>
+              <ChainCurrency />
+            </div>
+            <div style={{ gridArea: 'd2' }} className="font-bold text-right">
+              <CurrencyDisplay chainValue={0} includeLabel={false} />
+            </div>
+            <div style={{ gridArea: 'e2' }}>
+              <PreferredCurrency />
+            </div>
+
+            <div
+              style={{ gridArea: 'a3' }}
+              className="border-b border-grey-500"
+            />
+
+            <div style={{ gridArea: 'a4' }}>Total</div>
+            <div style={{ gridArea: 'b4' }} className="font-bold text-right">
+              {calculateTotal(tx.actions)}
+            </div>
+            <div style={{ gridArea: 'c4' }}>
+              <ChainCurrency />
+            </div>
+            <div style={{ gridArea: 'd4' }} className="font-bold text-right">
+              <CurrencyDisplay
+                chainValue={Number(calculateTotal(tx.actions))}
+                includeLabel={false}
+              />
+            </div>
+            <div style={{ gridArea: 'e4' }}>
+              <PreferredCurrency />
             </div>
           </div>
         </div>

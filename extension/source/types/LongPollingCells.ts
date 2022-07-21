@@ -1,5 +1,6 @@
 import * as io from 'io-ts';
 
+import { CurrencyConversion } from '../background/CurrencyConversionCell';
 import { IReadableCell } from '../cells/ICell';
 import recordKeys from '../helpers/recordKeys';
 import ExplicitAny from './ExplicitAny';
@@ -16,7 +17,7 @@ export const longPollingCellMap = {
   },
   currencyConversion: {
     origin: '<quill>',
-    Type: io.union([io.undefined, io.number]),
+    Type: CurrencyConversion,
   },
 };
 

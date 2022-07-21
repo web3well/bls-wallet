@@ -3,7 +3,6 @@ import Blockies from 'react-blockies';
 import {
   Copy,
   PaperPlaneTilt,
-  // CurrencyDollar,
   // ShareNetwork,
   // PokerChip,
   // Circle,
@@ -89,7 +88,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
 
           {/* <div className="mt-4 flex flex-col gap-1">
             <div className="flex gap-2 place-items-center">
-              <CurrencyDollar className="text-blue-400 icon-md" /> USD $
+              <PreferredCurrencySymbol className="text-blue-400 icon-md" />
+              USD $
               {wallet.ether * 3000.1}
             </div>
             <div className="flex gap-2 place-items-center">

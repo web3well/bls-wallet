@@ -1,4 +1,4 @@
-import { ArrowRight } from 'phosphor-react';
+import { ArrowRight, CurrencyEth } from 'phosphor-react';
 import { FunctionComponent } from 'react';
 import ICell from '../../../../cells/ICell';
 
@@ -36,7 +36,10 @@ const AssetSelector: FunctionComponent<{
           ].join(' ')}
           {...onAction(() => selectedAsset.write('ETH'))}
         >
-          <div className="grow">{/* TODO: icon */}Ether</div>
+          <div className="grow flex flex-row gap-3">
+            <CurrencyEth className="self-center text-blue-400 icon-md" />
+            <div>Ether</div>
+          </div>
           <div>
             {selectedAddress && <Balance address={selectedAddress} />}
             {!selectedAddress && <Loading />}

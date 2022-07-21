@@ -1,3 +1,4 @@
+import '../contentScript';
 import '../styles/index.scss';
 import './styles.scss';
 

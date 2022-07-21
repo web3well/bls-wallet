@@ -31,26 +31,6 @@ const CustomToken = io.type({
 
 type CustomToken = io.TypeOf<typeof CustomToken>;
 
-export const AddressPreferences = io.type({
-  preferredCurrency: io.string,
-  theme: Theme,
-  defaultPublicKeyHash: optional(io.string),
-  contacts: io.array(Contact),
-  customTokens: io.array(CustomToken),
-  customNfts: io.array(CustomNft),
-});
-
-export type AddressPreferences = io.TypeOf<typeof AddressPreferences>;
-
-export const defaultAddressPreferences: AddressPreferences = {
-  preferredCurrency: 'USD',
-  theme: 'dark',
-  defaultPublicKeyHash: undefined,
-  contacts: [],
-  customTokens: [],
-  customNfts: [],
-};
-
 // Note: These settings are communicated in-page. This seems fine for now, but
 // if we add something sensitive (or otherwise), we might want to make a
 // public/private distinction here.
@@ -66,7 +46,12 @@ export const DeveloperSettings = io.type({
 export type DeveloperSettings = io.TypeOf<typeof DeveloperSettings>;
 
 export const Preferences = io.type({
-  identities: io.record(io.string, optional(AddressPreferences)),
+  defaultPublicKeyHash: optional(io.string),
+  theme: Theme,
+  contacts: io.array(Contact),
+  customTokens: io.array(CustomToken),
+  customNfts: io.array(CustomNft),
+  currency: io.string,
   selectedPublicKeyHash: optional(io.string),
   developerSettings: DeveloperSettings,
 });

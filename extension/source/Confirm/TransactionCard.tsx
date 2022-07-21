@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { SendTransactionParams } from '../types/Rpc';
 import formatCompactAddress from '../helpers/formatCompactAddress';
 import { useInputDecode } from '../hooks/useInputDecode';
+import CurrencyDisplay from '../components/CurrencyDisplay';
 
 const TransactionCard: React.FC<SendTransactionParams> = ({
   data,
@@ -43,9 +44,9 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
 
       <div className="flex mt-6 gap-3">
         <div className="w-60 border-r border-grey-400">
-          <div>ETH Value</div>
+          <div>Value</div>
           <div className="break-all text-[9.5pt] font-bold">
-            {ethers.utils.formatEther(value || '0x0')}
+            {ethers.utils.formatEther(value || '0x0')} ETH
           </div>
         </div>
 

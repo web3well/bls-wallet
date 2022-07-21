@@ -1,8 +1,19 @@
+import * as io from 'io-ts';
+
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import TimeCell from '../cells/TimeCell';
 import Config from '../Config';
 import assert from '../helpers/assert';
+import optional from '../types/optional';
+
+export const CurrencyConversion = io.type({
+  from: io.string,
+  to: optional(io.string),
+  rate: optional(io.number),
+});
+
+export type CurrencyConversion = io.TypeOf<typeof CurrencyConversion>;
 
 /**
  * We use these aliases because the api we use does not know about them and
@@ -17,6 +28,8 @@ const currencyAliases: Record<string, string | undefined> = {
   KOR: 'ETH',
 };
 
+// TODO: Expose a cell containing the currency pair and the conversion to avoid
+// showing incorrect data temporarily when switching currencies.
 export default function CurrencyConversionCell(
   config: Config['currencyConversion'],
   preferredCurrency: IReadableCell<string | undefined>,
@@ -28,8 +41,16 @@ export default function CurrencyConversionCell(
       chainCurrency,
       time: TimeCell(config.pollInterval),
     },
-    ({ $preferredCurrency, $chainCurrency }) =>
-      fetchRate(config.api, config.apiKey, $chainCurrency, $preferredCurrency),
+    async ({ $preferredCurrency, $chainCurrency }) => ({
+      from: $chainCurrency,
+      to: $preferredCurrency,
+      rate: await fetchRate(
+        config.api,
+        config.apiKey,
+        $chainCurrency,
+        $preferredCurrency,
+      ),
+    }),
   );
 }
 

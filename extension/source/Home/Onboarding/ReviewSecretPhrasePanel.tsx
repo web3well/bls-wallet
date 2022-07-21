@@ -94,10 +94,16 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   const navigate = useNavigate();
 
   const setHDWalletPhrase = async () => {
+    // Temporary solution to get the password after the phrase
+    // is created. We could create the HDPhrase at the point the
+    // password is created to avoid this.
+    const password = (await cells.onboarding.read()).tempPassword;
+
     await rpc.setHDPhrase(secretPhrase.join(' '));
     const address = await rpc.addHDAccount();
     await rpc.setSelectedAddress(address);
-    await cells.onboarding.update({ completed: true });
+    await rpc.createNewVault(password);
+    await cells.onboarding.update({ completed: true, tempPassword: '' });
 
     navigate('/wallets');
   };

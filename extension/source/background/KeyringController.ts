@@ -1,5 +1,7 @@
 import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
+import encryptor from 'browser-passworder';
+
 import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillStorageCells from '../QuillStorageCells';
@@ -98,6 +100,21 @@ export default class KeyringController {
       );
 
       await this.keyring.update({ wallets: newWallets });
+    },
+
+    createNewVault: async ({ params: [password] }) => {
+      const { HDPhrase, nextHDIndex } = await this.keyring.read();
+      const HDPath = "m/44'/60'/0'/0";
+
+      const vaultData = {
+        HDPhrase,
+        HDPath,
+        numberOfAccounts: nextHDIndex,
+      };
+
+      const encryptedString = await encryptor.encrypt(password, vaultData);
+
+      await this.keyring.update({ vault: encryptedString });
     },
   });
 

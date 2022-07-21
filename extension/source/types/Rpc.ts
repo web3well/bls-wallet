@@ -159,6 +159,11 @@ export const rpcMap = {
     Params: io.tuple([io.string]),
     Response: io.void,
   },
+  createNewVault: {
+    origin: '<quill>',
+    Params: io.tuple([io.string]),
+    Response: io.void,
+  },
 
   // TransactionController
 

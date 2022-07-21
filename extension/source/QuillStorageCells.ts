@@ -26,10 +26,12 @@ function QuillStorageCells(storage: CellCollection) {
       io.type({
         autoOpened: io.boolean,
         completed: io.boolean,
+        tempPassword: io.string,
       }),
       () => ({
         autoOpened: false,
         completed: false,
+        tempPassword: '',
       }),
     ),
     keyring: storage.Cell(
@@ -43,11 +45,13 @@ function QuillStorageCells(storage: CellCollection) {
             address: io.string,
           }),
         ),
+        vault: io.string,
       }),
       () => ({
         HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
         nextHDIndex: 0,
         wallets: [],
+        vault: '',
       }),
     ),
     transactions: storage.Cell(

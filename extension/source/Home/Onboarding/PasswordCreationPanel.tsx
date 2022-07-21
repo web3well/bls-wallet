@@ -3,11 +3,22 @@ import { FunctionComponent, useState } from 'react';
 
 import Button from '../../components/Button';
 import PasswordCreationForm from './PasswordCreationForm';
+import { useQuill } from '../../QuillContext';
 
 const PasswordCreationPanel: FunctionComponent<{
   onComplete: () => void;
 }> = ({ onComplete }) => {
+  const { cells } = useQuill();
+
   const [password, setPassword] = useState<string>();
+
+  const handleNext = async () => {
+    // Temporary solution to save the password until the phrase
+    // is created. We could create the HDPhrase at the point the
+    // password is created to avoid temporarily storing the password.
+    await cells.onboarding.update({ tempPassword: password });
+    onComplete();
+  };
 
   return (
     <>
@@ -26,7 +37,7 @@ const PasswordCreationPanel: FunctionComponent<{
           className={`w-32 ${
             password === undefined ? 'btn-disabled' : 'btn-primary'
           }`}
-          onPress={() => password && onComplete()}
+          onPress={() => password && handleNext()}
           icon={<ArrowRight className="icon-md" />}
         >
           Continue

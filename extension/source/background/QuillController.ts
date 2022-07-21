@@ -157,6 +157,7 @@ export default class QuillController {
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       removeAccount: this.keyringController.rpc.removeAccount,
+      createNewVault: this.keyringController.rpc.createNewVault,
 
       // TransactionsController
       createTransaction: this.transactionsController.rpc.createTransaction,

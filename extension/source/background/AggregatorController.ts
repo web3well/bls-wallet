@@ -3,7 +3,6 @@ import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import assertType from '../cells/assertType';
 
-import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
@@ -11,11 +10,14 @@ import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
+import { IReadableCell } from '../cells/ICell';
+import getBlsNetworkConfig from './getBlsNetworkConfig';
+import BlsNetworksConfig from '../BlsNetworksConfig';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
   // aggregator for the particular provider only.
-  preferredAggregators: Record<string, string> = {};
+  preferredAggregators: Record<string, string | undefined> = {};
 
   knownTransactions: Record<
     string,
@@ -28,11 +30,12 @@ export default class AggregatorController {
   > = {};
 
   constructor(
+    public blsNetworksConfig: BlsNetworksConfig,
     public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
     public transactionsController: TransactionsController,
-    public ethersProvider: ethers.providers.Provider,
+    public ethersProvider: IReadableCell<ethers.providers.Provider>,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
@@ -58,24 +61,27 @@ export default class AggregatorController {
 
       const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
-      const wallet = await BlsWalletWrapper.connect(
-        privateKey,
-        NETWORK_CONFIG.addresses.verificationGateway,
-        this.ethersProvider,
+      const network = await this.networkController.network.read();
+
+      const blsNetworkConfig = getBlsNetworkConfig(
+        network,
+        this.blsNetworksConfig,
       );
 
-      // const nonce = (await wallet.Nonce()).toString();
-      const nonce = (
-        await BlsWalletWrapper.Nonce(
-          await wallet.PublicKey(),
-          NETWORK_CONFIG.addresses.verificationGateway,
-          this.ethersProvider,
-        )
-      ).toString();
+      const ethersProvider = await this.ethersProvider.read();
+
+      const wallet = await BlsWalletWrapper.connect(
+        privateKey,
+        blsNetworkConfig.addresses.verificationGateway,
+        ethersProvider,
+      );
+
+      const nonce = (await wallet.Nonce()).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
       const aggregatorUrl =
-        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
+        this.preferredAggregators[providerId] ?? network.aggregatorUrl;
+
       const agg = new Aggregator(aggregatorUrl);
       const result = await agg.add(bundle);
 

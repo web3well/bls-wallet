@@ -1,13 +1,11 @@
 import { EventEmitter } from 'events';
 
 import TypedEmitter from 'typed-emitter';
-import { deepCopy } from 'ethers/lib/utils';
 
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
 import CellIterator from './CellIterator';
 import { IReadableCell, ChangeEvent } from './ICell';
-import jsonHasChanged from './jsonHasChanged';
 import recordKeys from '../helpers/recordKeys';
 import MemoryCell from './MemoryCell';
 import AsyncIteratee from './AsyncIteratee';
@@ -16,6 +14,8 @@ import nextEvent from './nextEvent';
 import prefixKeys, { PrefixKeys } from './prefixKeys';
 import assert from '../helpers/assert';
 import delay from '../helpers/delay';
+import mixtureHasChanged from './mixtureHasChanged';
+import mixtureCopy from './mixtureCopy';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -46,7 +46,7 @@ export class FormulaCell<
     public hasChanged: (
       previous: Awaited<T> | undefined,
       latest: Awaited<T>,
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ) {}
 
   end() {
@@ -147,7 +147,7 @@ export class FormulaCell<
           break;
         }
 
-        const latest = deepCopy(
+        const latest = mixtureCopy(
           await this.formula(
             prefixKeys('$', inputValues.value as InputValues<InputCells>),
           ),
@@ -183,7 +183,7 @@ export class FormulaCell<
     hasChanged: (
       previous: Input[K] | undefined,
       latest: Input[K],
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ): IReadableCell<Input[K]> {
     return new FormulaCell({ input }, ({ $input }) => $input[key], hasChanged);
   }
@@ -199,7 +199,7 @@ export class FormulaCell<
     hasChanged: (
       previous: Input[K] | undefined,
       latest: Input[K],
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ): IReadableCell<Exclude<Input[K], undefined | null>> {
     return new FormulaCell(
       { input },

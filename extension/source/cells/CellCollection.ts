@@ -5,10 +5,10 @@ import * as io from 'io-ts';
 import ExplicitAny from '../types/ExplicitAny';
 import ICell, { CellEmitter, StrictPartial } from './ICell';
 import CellIterator from './CellIterator';
-import jsonHasChanged from './jsonHasChanged';
 import assert from '../helpers/assert';
 import IAsyncStorage from './IAsyncStorage';
 import assertType from './assertType';
+import mixtureHasChanged from './mixtureHasChanged';
 
 export default class CellCollection {
   cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
@@ -44,7 +44,7 @@ export default class CellCollection {
     key: string,
     type: io.Type<T>,
     makeDefault: () => T | Promise<Awaited<T>>,
-    hasChanged = jsonHasChanged,
+    hasChanged = mixtureHasChanged,
   ): CollectionCell<T> {
     let cell = this.cells[key];
 
@@ -90,7 +90,7 @@ export class CollectionCell<T> implements ICell<T> {
     public key: string,
     public type: io.Type<T>,
     public makeDefault: () => T | Promise<Awaited<T>>,
-    public hasChanged: ICell<T>['hasChanged'] = jsonHasChanged,
+    public hasChanged: ICell<T>['hasChanged'] = mixtureHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
 
@@ -182,7 +182,7 @@ export class CollectionCell<T> implements ICell<T> {
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
-    return new CellIterator(this);
+    return new CellIterator<T>(this);
   }
 
   async versionedRead(): Promise<Versioned<T>> {

@@ -17,7 +17,7 @@ const RecipientSelector: FunctionComponent<{
 }> = ({ recipient }) => {
   const quill = useQuill();
   const selectedAddress = useCell(quill.cells.selectedAddress);
-  const keyring = useCell(quill.cells.keyring);
+  const ethAccounts = useCell(quill.cells.ethAccounts) ?? [];
 
   const searchText = useMemo(() => new MemoryCell(''), []);
   const searchTextValue = useCell(searchText);
@@ -29,9 +29,9 @@ const RecipientSelector: FunctionComponent<{
       return [{ address: searchTextValue, name: 'Custom Recipient' }];
     }
 
-    return (keyring?.wallets ?? [])
-      .map((wallet, i) => ({
-        address: wallet.address,
+    return ethAccounts
+      .map((address, i) => ({
+        address,
         name: `Wallet ${i}`,
       }))
       .filter((r) => r.address !== selectedAddress)

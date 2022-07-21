@@ -3,7 +3,7 @@ import assert from '../helpers/assert';
 import CellIterator from './CellIterator';
 
 import ICell, { CellEmitter, StrictPartial } from './ICell';
-import jsonHasChanged from './jsonHasChanged';
+import mixtureHasChanged from './mixtureHasChanged';
 
 export default class MemoryCell<T> implements ICell<Awaited<T>> {
   events = new EventEmitter() as CellEmitter<Awaited<T>>;
@@ -12,7 +12,7 @@ export default class MemoryCell<T> implements ICell<Awaited<T>> {
 
   constructor(
     valueLike: T,
-    public hasChanged: ICell<Awaited<T>>['hasChanged'] = jsonHasChanged,
+    public hasChanged: ICell<Awaited<T>>['hasChanged'] = mixtureHasChanged,
   ) {
     this.#valueLike = Promise.resolve(valueLike) as Promise<Awaited<T>>;
   }

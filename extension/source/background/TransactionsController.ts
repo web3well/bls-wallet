@@ -17,7 +17,6 @@ export default class TransactionsController {
   constructor(
     public InternalRpc: () => RpcClient,
     public transactions: QuillStorageCells['transactions'],
-    public selectedAddress: QuillStorageCells['selectedAddress'],
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
@@ -82,10 +81,18 @@ export default class TransactionsController {
     createTransaction: async ({ params }) => {
       const id = RandomId();
 
+      assert(params.length > 0);
+      const { from } = params[0];
+
+      assert(
+        params.every((p) => p.from === from),
+        () => new Error('Attempt to create transaction with multiple froms'),
+      );
+
       const newTransaction: QuillTransaction = {
         id,
         chainId: await this.InternalRpc().eth_chainId(),
-        from: (await this.selectedAddress.read()) || '',
+        from,
         createdAt: +new Date(),
         status: TransactionStatus.NEW,
         bundleHash: '',

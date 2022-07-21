@@ -1,5 +1,7 @@
 import * as io from 'io-ts';
 
+import optional from '../types/optional';
+
 export const Theme = io.union([io.literal('light'), io.literal('dark')]);
 export type Theme = io.TypeOf<typeof Theme>;
 
@@ -32,7 +34,7 @@ type CustomToken = io.TypeOf<typeof CustomToken>;
 export const AddressPreferences = io.type({
   preferredCurrency: io.string,
   theme: Theme,
-  defaultPublicAddress: io.union([io.undefined, io.string]),
+  defaultPublicKeyHash: optional(io.string),
   contacts: io.array(Contact),
   customTokens: io.array(CustomToken),
   customNfts: io.array(CustomNft),
@@ -43,7 +45,7 @@ export type AddressPreferences = io.TypeOf<typeof AddressPreferences>;
 export const defaultAddressPreferences: AddressPreferences = {
   preferredCurrency: 'USD',
   theme: 'dark',
-  defaultPublicAddress: undefined,
+  defaultPublicKeyHash: undefined,
   contacts: [],
   customTokens: [],
   customNfts: [],
@@ -64,11 +66,8 @@ export const DeveloperSettings = io.type({
 export type DeveloperSettings = io.TypeOf<typeof DeveloperSettings>;
 
 export const Preferences = io.type({
-  identities: io.record(
-    io.string,
-    io.union([io.undefined, AddressPreferences]),
-  ),
-  selectedAddress: io.union([io.undefined, io.string]),
+  identities: io.record(io.string, optional(AddressPreferences)),
+  selectedPublicKeyHash: optional(io.string),
   developerSettings: DeveloperSettings,
 });
 

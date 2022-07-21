@@ -14,7 +14,7 @@ import { DeveloperSettings } from '../background/Preferences';
 
 export const ProviderState = io.type({
   chainId: io.string,
-  selectedAddress: io.union([io.undefined, io.string]),
+  selectedPublicKeyHash: io.union([io.undefined, io.string]),
   developerSettings: DeveloperSettings,
 });
 
@@ -151,6 +151,11 @@ export const rpcMap = {
   },
   lookupPrivateKey: {
     origin: '<quill>',
+    Params: io.tuple([io.string]),
+    Response: io.string,
+  },
+  pkHashToAddress: {
+    origin: '*',
     Params: io.tuple([io.string]),
     Response: io.string,
   },

@@ -21,15 +21,15 @@ import isType from '../cells/isType';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import AggregatorController from './AggregatorController';
-import CurrencyConversionCell, {
-  CurrencyConversionConfig,
-} from './CurrencyConversionCell';
+import CurrencyConversionCell from './CurrencyConversionCell';
 import assert from '../helpers/assert';
 import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
 import TransactionsController from './TransactionsController';
+import BlsNetworksConfig from '../BlsNetworksConfig';
+import Config from '../Config';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -44,7 +44,7 @@ export default class QuillController {
    * @deprecated
    * FIXME: `BlsWalletWrapper` should just support a vanilla provider.
    */
-  ethersProvider: ethers.providers.Provider;
+  ethersProvider: IReadableCell<ethers.providers.Provider>;
 
   rpc: RpcImpl;
   internalRpc: RpcClient;
@@ -52,41 +52,46 @@ export default class QuillController {
   cells: QuillStorageCells;
 
   constructor(
+    public config: Config,
+    public blsNetworksConfig: BlsNetworksConfig,
     public storage: CellCollection,
-    public currencyConversionConfig: CurrencyConversionConfig,
   ) {
-    this.cells = QuillStorageCells(storage);
+    this.cells = QuillStorageCells(config, storage);
 
     this.networkController = new NetworkController(this.cells.network);
 
-    this.ethersProvider = new ethers.providers.Web3Provider(
-      this.networkController,
+    this.ethersProvider = new FormulaCell(
+      { network: this.cells.network },
+      () => new ethers.providers.Web3Provider(this.networkController),
+    );
+
+    this.keyringController = new KeyringController(
+      blsNetworksConfig,
+      () => this.internalRpc,
+      this.cells.keyring,
+      this.cells.selectedPublicKeyHash,
+      this.cells.network,
+      this.ethersProvider,
     );
 
     this.preferencesController = new PreferencesController(
       this.cells.preferences,
+      this.keyringController,
     );
 
     this.currencyConversion = CurrencyConversionCell(
-      this.currencyConversionConfig,
+      config.currencyConversion,
       this.preferencesController.preferredCurrency,
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
-    );
-
-    this.keyringController = new KeyringController(
-      () => this.internalRpc,
-      this.cells.keyring,
-      this.cells.selectedAddress,
-      this.ethersProvider,
     );
 
     this.transactionsController = new TransactionsController(
       () => this.internalRpc,
       this.cells.transactions,
-      this.cells.selectedAddress,
     );
 
     this.aggregatorController = new AggregatorController(
+      blsNetworksConfig,
       () => this.internalRpc,
       this.networkController,
       this.keyringController,
@@ -143,7 +148,21 @@ export default class QuillController {
 
         const address = await this.keyringController.rpc.addAccount(request);
 
-        this.preferencesController.createUser(address, 'USD', 'light');
+        const network = await this.cells.network.read();
+        const keyring = await this.cells.keyring.read();
+
+        const wallet = keyring.wallets.find(
+          (w) => w.networks[network.networkKey]?.address === address,
+        );
+
+        assert(wallet !== undefined);
+
+        this.preferencesController.createUser(
+          wallet.publicKeyHash,
+          'USD',
+          'light',
+        );
+
         return address;
       },
 
@@ -156,6 +175,7 @@ export default class QuillController {
       addHDAccount: this.keyringController.rpc.addHDAccount,
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
+      pkHashToAddress: this.keyringController.rpc.pkHashToAddress,
       removeAccount: this.keyringController.rpc.removeAccount,
 
       // TransactionsController

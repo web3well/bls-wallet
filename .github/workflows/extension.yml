@@ -46,7 +46,7 @@ jobs:
     # Valid network config not needed to test build.
     - working-directory: ./contracts/networks
       run: echo "{}" > "local.json"
-    - run: cp .env.example .env
+    - run: cp config.example.json config.json
     - run: yarn install --frozen-lockfile
     # For now, just check that chrome builds
     - run: yarn build:chrome

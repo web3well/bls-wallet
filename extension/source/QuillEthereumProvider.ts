@@ -53,7 +53,18 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     const state = QuillLongPollingCell(this, 'providerState');
 
     const chainId = FormulaCell.Sub(state, 'chainId');
-    const selectedAddress = FormulaCell.Sub(state, 'selectedAddress');
+
+    const selectedAddress = new FormulaCell({ state }, ({ $state }) => {
+      if ($state.selectedPublicKeyHash === undefined) {
+        return undefined;
+      }
+
+      return this.request({
+        method: 'pkHashToAddress',
+        params: [$state.selectedPublicKeyHash],
+      });
+    });
+
     const developerSettings = FormulaCell.Sub(state, 'developerSettings');
 
     let connected = false;

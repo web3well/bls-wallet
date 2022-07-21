@@ -206,3 +206,5 @@ dist/
 # Non-template additions
 .env*
 !.env.example
+/build
+/config.json

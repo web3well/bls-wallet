@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react';
 import useCell from '../../../cells/useCell';
 import Button from '../../../components/Button';
+import Loading from '../../../components/Loading';
 import { useQuill } from '../../../QuillContext';
 /* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { WalletSummary } from './WalletSummary';
@@ -17,7 +18,7 @@ export const WalletsWrapper: FunctionComponent = () => {
   const { rpc } = quill;
 
   // TODO: Add useQuillCells convenience api.
-  const keyring = useCell(quill.cells.keyring);
+  const ethAccounts = useCell(quill.cells.ethAccounts);
   const selectedAddress = useCell(quill.cells.selectedAddress);
 
   return (
@@ -29,20 +30,20 @@ export const WalletsWrapper: FunctionComponent = () => {
         </Button>
       </div>
 
-      {!keyring && 'Loading'}
-      {keyring && (
+      {!ethAccounts && <Loading />}
+      {ethAccounts && (
         <div className="flex flex-col gap-6 mt-8">
-          {keyring.wallets.map((wallet, index) => (
+          {ethAccounts.map((address, index) => (
             <WalletSummary
-              onAction={() => rpc.setSelectedAddress(wallet.address)}
-              key={wallet.address}
+              onAction={() => rpc.setSelectedAddress(address)}
+              key={address}
               wallet={{
-                address: wallet.address,
+                address,
                 name: `Wallet ${index}`,
                 networks: 1,
                 tokens: 0,
               }}
-              expanded={wallet.address === selectedAddress}
+              expanded={address === selectedAddress}
             />
           ))}
         </div>

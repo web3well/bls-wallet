@@ -13,6 +13,7 @@ import {
   Theme,
 } from './Preferences';
 import { PartialRpcImpl } from '../types/Rpc';
+import KeyringController from './KeyringController';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
@@ -21,20 +22,23 @@ export default class PreferencesController {
   identities: ICell<Preferences['identities']>;
   preferredCurrency: IReadableCell<string | undefined>;
 
-  constructor(public preferences: ICell<Preferences>) {
+  constructor(
+    public preferences: ICell<Preferences>,
+    public keyringController: KeyringController,
+  ) {
     this.identities = TransformCell.Sub(preferences, 'identities');
 
     this.preferredCurrency = new FormulaCell(
       { preferences },
       // eslint-disable-next-line @typescript-eslint/no-shadow
       ({ $preferences }) => {
-        const { selectedAddress, identities } = $preferences;
+        const { selectedPublicKeyHash, identities } = $preferences;
 
-        if (selectedAddress === undefined) {
+        if (selectedPublicKeyHash === undefined) {
           return undefined;
         }
 
-        const identity = identities[selectedAddress];
+        const identity = identities[selectedPublicKeyHash];
         assert(identity !== undefined);
 
         return identity.preferredCurrency;
@@ -44,31 +48,50 @@ export default class PreferencesController {
 
   rpc = ensureType<PartialRpcImpl>()({
     setSelectedAddress: async ({ params: [selectedAddress] }) => {
-      this.preferences.update({ selectedAddress });
+      const walletsNetworkData =
+        await this.keyringController.getWalletsNetworkData();
+
+      for (const [publicKeyHash, walletNetworkData] of Object.entries(
+        walletsNetworkData,
+      )) {
+        assert(walletNetworkData !== undefined);
+
+        if (walletNetworkData.address === selectedAddress) {
+          await this.preferences.update({
+            selectedPublicKeyHash: publicKeyHash,
+          });
+
+          return;
+        }
+      }
+
+      assert(false, () => new Error("Couldn't find matching wallet"));
     },
   });
 
-  AddressPreferences(address: string): ICell<AddressPreferences | undefined> {
-    return TransformCell.Sub(this.identities, address);
+  AddressPreferences(
+    publicKeyHash: string,
+  ): ICell<AddressPreferences | undefined> {
+    return TransformCell.Sub(this.identities, publicKeyHash);
   }
 
   SelectedPreferences(): ICell<AddressPreferences> {
-    const selectedAddressPromise = this.preferences.read().then((s) => {
-      assert(s.selectedAddress !== undefined);
-      return s.selectedAddress;
+    const selectedPublicKeyHashPromise = this.preferences.read().then((s) => {
+      assert(s.selectedPublicKeyHash !== undefined);
+      return s.selectedPublicKeyHash;
     });
 
     return new TransformCell(
       this.identities,
       async ($identities) => {
-        const selectedAddress = await selectedAddressPromise;
-        const prefs = $identities[selectedAddress];
+        const selectedPublicKeyHash = await selectedPublicKeyHashPromise;
+        const prefs = $identities[selectedPublicKeyHash];
         assert(prefs !== undefined);
         return prefs;
       },
       async ($identities, newPrefs) => {
-        const selectedAddress = await selectedAddressPromise;
-        return { ...$identities, [selectedAddress]: newPrefs };
+        const selectedPublicKeyHash = await selectedPublicKeyHashPromise;
+        return { ...$identities, [selectedPublicKeyHash]: newPrefs };
       },
     );
   }
@@ -78,8 +101,12 @@ export default class PreferencesController {
    * @param address - address of the user
    *
    */
-  async createUser(address: string, preferredCurrency: string, theme: Theme) {
-    const newUserPreferences = this.AddressPreferences(address);
+  async createUser(
+    publicKeyHash: string,
+    preferredCurrency: string,
+    theme: Theme,
+  ) {
+    const newUserPreferences = this.AddressPreferences(publicKeyHash);
 
     assert(
       (await newUserPreferences.read()) === undefined,
@@ -89,14 +116,14 @@ export default class PreferencesController {
     const $preferences = await this.preferences.read();
 
     const selectedAddressPreferences =
-      $preferences.selectedAddress &&
-      $preferences.identities[$preferences.selectedAddress];
+      $preferences.selectedPublicKeyHash &&
+      $preferences.identities[$preferences.selectedPublicKeyHash];
 
     await newUserPreferences.write({
       ...defaultAddressPreferences,
       ...selectedAddressPreferences,
       theme,
-      defaultPublicAddress: address,
+      defaultPublicKeyHash: publicKeyHash,
       preferredCurrency,
     });
   }

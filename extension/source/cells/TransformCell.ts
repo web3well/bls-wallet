@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 
 import { FormulaCell } from './FormulaCell';
 import ICell, { CellEmitter, StrictPartial } from './ICell';
-import jsonHasChanged from './jsonHasChanged';
+import mixtureHasChanged from './mixtureHasChanged';
 
 export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
   events = new EventEmitter() as CellEmitter<Awaited<T>>;
@@ -19,7 +19,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
     public hasChanged: (
       previous: Awaited<T> | undefined,
       latest: Awaited<T>,
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ) {
     this.ended = input.ended;
 
@@ -60,7 +60,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
     hasChanged: (
       previous: Input[K] | undefined,
       latest: Input[K],
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ): ICell<Input[K]> {
     return new TransformCell(
       input,
@@ -81,7 +81,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
     hasChanged: (
       previous: Input[K] | undefined,
       latest: Input[K],
-    ) => boolean = jsonHasChanged,
+    ) => boolean = mixtureHasChanged,
   ): ICell<Exclude<Input[K], undefined | null>> {
     return new TransformCell(
       input,

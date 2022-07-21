@@ -1,7 +1,6 @@
 /* eslint-disable */
 
 const path = require('path');
-const fs = require('fs');
 const webpack = require('webpack');
 const FilemanagerPlugin = require('filemanager-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -14,6 +13,8 @@ const WextManifestWebpackPlugin = require('wext-manifest-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const DotenvWebpackPlugin = require('dotenv-webpack');
+
+require('./buildBlsNetworksConfig');
 
 const viewsPath = path.join(__dirname, 'views');
 const sourcePath = path.join(__dirname, 'source');
@@ -49,10 +50,6 @@ const getExtensionFileType = (browser) => {
 
   return 'zip';
 };
-
-const networkConfigPath =
-  process.env.NETWORK_CONFIG_PATH ??
-  path.join(__dirname, '..', 'contracts', 'networks', 'local.json');
 
 module.exports = {
   devtool: 'source-map', // https://github.com/webpack/webpack/issues/1194#issuecomment-560382342
@@ -156,7 +153,6 @@ module.exports = {
     new webpack.EnvironmentPlugin({
       NODE_ENV: undefined,
       TARGET_BROWSER: undefined,
-      NETWORK_CONFIG: fs.readFileSync(networkConfigPath, 'utf8'),
     }),
     // delete previous build files
     new CleanWebpackPlugin({
